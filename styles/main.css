@@ -1,0 +1,71 @@
+/* styles/main.css */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f4f9;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+    text-align: center;
+}
+
+/* Heading styles */
+h1 {
+    font-size: 2rem;
+    margin-bottom: 20px;
+    color: #222;
+}
+
+/* List container */
+ul#country-list {
+    list-style: none;
+    max-width: 600px;
+    width: 100%;
+    padding: 0;
+    margin: 0 auto;
+}
+
+/* List items */
+ul#country-list li {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 10px;
+    transition: background-color 0.3s ease;
+}
+
+/* Flag images */
+ul#country-list img {
+    border-radius: 4px;
+}
+
+/* Hover effect for list items */
+ul#country-list li:hover {
+    background-color: #f0f0f0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    h1 {
+        font-size: 1.5rem;
+    }
+
+    ul#country-list li {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
