@@ -22,7 +22,6 @@ function displayCountryList(countries) {
     countries.forEach(country => {
         const listItem = document.createElement("li");
 
-        // Create and append the flag image
         const flagImg = document.createElement("img");
         flagImg.src = country.flags.svg;
         flagImg.alt = `Drapeau de ${country.name.common}`;
