@@ -1,9 +1,21 @@
 {
-    "name": "ContactsManager",
-    "short_name": "ContactSync",
-    "start_url": "/",
+    "name": "Contacts PWA",
+    "short_name": "Contacts",
+    "start_url": ".",
     "display": "standalone",
-    "background_color": "#f4f4f9",
-    "theme_color": "#007bff",
-    "description": "Synchronisez vos contacts d'urgence facilement."
-}
+    "background_color": "#ffffff",
+    "description": "Une PWA pour accéder aux contacts du smartphone.",
+    "icons": [
+      {
+        "src": "icon-192.png",
+        "sizes": "192x192",
+        "type": "image/png"
+      },
+      {
+        "src": "icon-512.png",
+        "sizes": "512x512",
+        "type": "image/png"
+      }
+    ]
+  }
+  
