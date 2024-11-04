@@ -1,39 +1,40 @@
 "use strict";
 
-const DATA_KEY = "Data";
-const DATA_LINK = "https://restcountries.com/v3.1/all";
-let countryData;
+const CACHE_NAME = 'ContactsManager';
+const urlsToCache = [
+    '/',
+    '/index.html',
+    '/styles/main.css',
+    '/scripts/script.js',
+    '/manifest.json',
+];
 
-async function fetchCountryData() {
-    if (localStorage.getItem(DATA_KEY) !== null) {
-        countryData = JSON.parse(localStorage.getItem(DATA_KEY));
-    } else {
-        const response = await fetch(DATA_LINK);
-        countryData = await response.json();
-        localStorage.setItem(DATA_KEY, JSON.stringify(countryData));
-    }
-    displayCountryList(countryData);
-}
+self.addEventListener('install', event => {
+    event.waitUntil(
+        caches.open(CACHE_NAME).then(cache => {
+            return cache.addAll(urlsToCache);
+        })
+    );
+});
 
-function displayCountryList(countries) {
-    const countryListElement = document.getElementById("country-list");
-    countryListElement.innerHTML = '';
+self.addEventListener('fetch', event => {
+    event.respondWith(
+        caches.match(event.request).then(response => {
+            return response || fetch(event.request);
+        })
+    );
+});
 
-    countries.forEach(country => {
-        const listItem = document.createElement("li");
-
-        const flagImg = document.createElement("img");
-        flagImg.src = country.flags.svg;
-        flagImg.alt = `Drapeau de ${country.name.common}`;
-        flagImg.style.width = "50px";
-        flagImg.style.marginRight = "10px";
-
-        listItem.appendChild(flagImg);
-
-        listItem.appendChild(document.createTextNode(country.name.common));
-
-        countryListElement.appendChild(listItem);
-    });
-}
-
-fetchCountryData();
+self.addEventListener('activate', event => {
+    event.waitUntil(
+        caches.keys().then(cacheNames => {
+            return Promise.all(
+                cacheNames.map(cache => {
+                    if (cache !== CACHE_NAME) {
+                        return caches.delete(cache);
+                    }
+                })
+            );
+        })
+    );
+});

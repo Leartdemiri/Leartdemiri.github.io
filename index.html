@@ -1,16 +1,28 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Liste des pays</title>
+    <title>Emergency Contact Sync</title>
     <link rel="stylesheet" href="styles/main.css">
-    <meta name="theme-color" content="#000000" />
+    <link rel="manifest" href="manifest.json">
 </head>
 <body>
-    <h1>Liste des pays</h1>
-    <ul id="country-list"></ul>
+    <div class="container">
+        <h1>Synchronisation des Contacts d'Urgence</h1>
+        <button id="syncButton" onclick="syncEmergencyContacts()">Synchroniser les Contacts</button>
+        <div id="status"></div>
+    </div>
 
-    <script src="scripts/main.js"></script>
+    <script src="scripts/script.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/service-worker.js').then(() => {
+                console.log('Service Worker registered');
+            }).catch(error => {
+                console.error('Service Worker registration failed:', error);
+            });
+        }
+    </script>
 </body>
 </html>

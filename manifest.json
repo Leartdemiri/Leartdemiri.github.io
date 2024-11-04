@@ -1,0 +1,9 @@
+{
+    "name": "ContactsManager",
+    "short_name": "ContactSync",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#f4f4f9",
+    "theme_color": "#007bff",
+    "description": "Synchronisez vos contacts d'urgence facilement."
+}
