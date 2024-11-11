@@ -1,10 +1,10 @@
 {
-    "name": "Contacts PWA",
-    "short_name": "Contacts",
+    "name": "Geocaching",
+    "short_name": "Geocaching",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#ffffff",
-    "description": "Une PWA pour accéder aux contacts du smartphone.",
+    "description": "Geocaching",
     "icons": [
       {
         "src": "icon-192.png",
