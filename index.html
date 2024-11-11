@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,10 +9,16 @@
   <meta name="theme-color" content="#31d53d" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css">
   <style>
-    #map { height: 80vh; }
-    #details-page { display: none; }
+    #map {
+      height: 80vh;
+    }
+
+    #details-page {
+      display: none;
+    }
   </style>
 </head>
+
 <body>
   <div id="map"></div>
   <button onclick="openCamera()">Prendre Photo</button>
@@ -31,7 +38,9 @@
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script>
-    let map, currentMarker, cameraFacing = "environment";
+    let map = "environment";
+    let currentMarker = "environment";
+    let cameraFacing = "environment";
     document.addEventListener("DOMContentLoaded", initMap);
 
     function initMap() {
@@ -45,11 +54,11 @@
     async function onMapClick(e) {
       currentMarker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
       currentMarker.on("click", () => showGeocacheDetails(currentMarker));
-      
+
       const description = prompt("Entrez une description pour cet objet:");
       const photos = await capturePhoto();
       const geocacheData = { lat: e.latlng.lat, lng: e.latlng.lng, description, photos };
-      
+
       saveGeocacheData(geocacheData);
     }
 
@@ -85,19 +94,27 @@
 
     function toggleCamera() {
       cameraFacing = cameraFacing === "environment" ? "user" : "environment";
-      openCamera();
     }
 
     async function capturePhoto() {
-      const canvas = document.createElement("canvas");
-      const video = document.getElementById("video");
-      const context = canvas.getContext("2d");
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const photoURL = canvas.toDataURL("image/png");
-      return [photoURL];
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: cameraFacing } });
+        const track = stream.getVideoTracks()[0];
+        const imageCapture = new ImageCapture(track);
+
+        const photo = await imageCapture.takePhoto();
+        track.stop(); 
+
+        const photoURL = URL.createObjectURL(photo);
+        return [photoURL];
+      } 
+      catch (error) 
+      {
+        console.error("Error capturing photo:", error);
+        return [];
+      }
     }
   </script>
 </body>
+
 </html>
