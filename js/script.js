@@ -26,9 +26,7 @@ function initializeMap() {
     if (!window.L) {
         const script = document.createElement('script');
         script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-        script.onload = () => {
-            setupMap();
-        };
+        script.onload = setupMap;
         document.body.appendChild(script);
 
         const link = document.createElement('link');
@@ -43,7 +41,7 @@ function initializeMap() {
 function setupMap() {
     if (mapInstance) return; // Prevent multiple map instances
 
-    mapInstance = L.map('map').setView([0, 0], 2);
+    mapInstance = L.map('map', { zoomControl: false }).setView([0, 0], 16);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
         attribution: '© OpenStreetMap contributors'
     }).addTo(mapInstance);
@@ -53,10 +51,27 @@ function setupMap() {
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 const { latitude, longitude } = position.coords;
-                mapInstance.setView([latitude, longitude], 12);
+
+                // Center map on user
+                mapInstance.setView([latitude, longitude], 18);
+
+                // Add marker at user's location
                 L.marker([latitude, longitude]).addTo(mapInstance)
                     .bindPopup("You are here!")
                     .openPopup();
+
+                // Add a 50m radius circle
+                const userCircle = L.circle([latitude, longitude], {
+                    radius: 50, // 50 meters
+                    color: 'yellow',
+                    fillColor: 'yellow',
+                    fillOpacity: 0.3
+                }).addTo(mapInstance);
+
+                // Restrict the view to the circle bounds
+                const bounds = userCircle.getBounds();
+                mapInstance.setMaxBounds(bounds);
+                mapInstance.fitBounds(bounds);
             },
             () => {
                 console.warn("Location access denied. Using default coordinates.");
