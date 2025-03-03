@@ -12,7 +12,7 @@ const printCurrentPosition = async () => {
   str += 'Longitude:'+ coordinates.coords.longitude + '<br>';
   div.innerHTML = str;
 
-  alert("SA MARCHE");
+  alert("CA MARCHE");
 
 };
 
