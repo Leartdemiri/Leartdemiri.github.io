@@ -1,6 +1,7 @@
 // Variables
 let mapVisible = false;
 let mapInstance = null;
+const DRAGON_BALL_COUNT = 7;
 
 // Declare buttons
 const mapButton = document.getElementById("ShowMapButton");
@@ -72,12 +73,40 @@ function setupMap() {
                 const bounds = userCircle.getBounds();
                 mapInstance.setMaxBounds(bounds);
                 mapInstance.fitBounds(bounds);
+
+                // Generate Dragon Balls inside the circle
+                generateDragonBalls(latitude, longitude);
             },
             () => {
                 console.warn("Location access denied. Using default coordinates.");
             }
         );
     }
+}
+
+function generateDragonBalls(centerLat, centerLng) {
+    for (let i = 0; i < DRAGON_BALL_COUNT; i++) {
+        const { lat, lng } = getRandomPointInCircle(centerLat, centerLng, 50);
+
+        L.marker([lat, lng])
+            .addTo(mapInstance)
+            .bindPopup("🟠 A Dragon Ball is here!");
+    }
+}
+
+// Generates a random point within a given radius (meters)
+function getRandomPointInCircle(centerLat, centerLng, radius) {
+    const earthRadius = 6371000; // Earth's radius in meters
+    const randomAngle = Math.random() * 2 * Math.PI;
+    const randomDistance = Math.sqrt(Math.random()) * radius; // Ensures uniform distribution
+
+    const deltaLat = (randomDistance * Math.cos(randomAngle)) / earthRadius * (180 / Math.PI);
+    const deltaLng = (randomDistance * Math.sin(randomAngle)) / (earthRadius * Math.cos(centerLat * Math.PI / 180)) * (180 / Math.PI);
+
+    return {
+        lat: centerLat + deltaLat,
+        lng: centerLng + deltaLng
+    };
 }
 
 function scanForDragonBalls() {
