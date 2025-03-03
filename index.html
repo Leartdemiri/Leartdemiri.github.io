@@ -1,106 +1,42 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Geocaching PWA</title>
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#31d53d" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css">
-  <style>
-    #map { height: 80vh; }
-    #details-page { display: none; }
-  </style>
-</head>
-<body>
-  <div id="map"></div>
-  <button onclick="capturePhoto()">Prendre Photo</button>
-  <button id="toggle-camera" onclick="toggleCamera()">Basculer Caméra</button>
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>DragonRadar</title>
+    <meta
+      name="viewport"
+      content="viewport-fit=cover, width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="msapplication-tap-highlight" content="no" />
 
-  <div id="details-page" class="w3-modal">
-    <div>
-      <span onclick="closeDetails()">&times;</span>
-      <h2>Détails de l'objet</h2>
-      <div id="photos"></div>
-      <p id="description"></p>
-      <button onclick="closeDetails()">Retour</button>
+    <script
+      type="module"
+      src="https://unpkg.com/@ionic/pwa-elements@latest/dist/ionicpwaelements/ionicpwaelements.esm.js"
+    ></script>
+    <script
+      nomodule
+      src="https://unpkg.com/@ionic/pwa-elements@latest/dist/ionicpwaelements/ionicpwaelements.js"
+    ></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="./assets/icon/favicon.ico" />
+    <link rel="manifest" href="./manifest.json" />
+    <link rel="stylesheet" href="./css/style.css" />
+    <meta name="theme-color" content="#31d53d" />
+  </head>
+  <body>
+    <div class="container text-center">
+      <h1 class="my-5">Dragon Radar</h1>
+  
+      <button class="btn btn-primary mb-3" id="SearchBallButton">Scan for Dragon Balls</button>
+      <button class="btn btn-secondary mb-3" id="ShowMapButton">Afficher la carte</button>
+  
+      <div class="d-flex justify-content-center">
+        <div id="map"></div>
+      </div>
+  
     </div>
-  </div>
 
-  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-  <script>
-    let map, currentMarker, cameraFacing = "environment";
-    let stream = null;
-
-    document.addEventListener("DOMContentLoaded", initMap);
-
-    function initMap() {
-      map = L.map('map').setView([46.2044, 6.1432], 13); // Centre sur Genève
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
-      map.on("click", onMapClick);
-
-      loadGeocaches();
-    }
-
-    async function onMapClick(e) {
-      currentMarker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
-      currentMarker.on("click", () => showGeocacheDetails(currentMarker));
-      
-      const description = prompt("Entrez une description pour cet objet:");
-      const photos = await capturePhoto();
-      const geocacheData = { lat: e.latlng.lat, lng: e.latlng.lng, description, photos };
-      
-      saveGeocacheData(geocacheData);
-    }
-
-    function saveGeocacheData(data) {
-      let geocaches = JSON.parse(localStorage.getItem("geocaches") || "[]");
-      geocaches.push(data);
-      localStorage.setItem("geocaches", JSON.stringify(geocaches));
-    }
-
-    function loadGeocaches() {
-      const geocaches = JSON.parse(localStorage.getItem("geocaches") || "[]");
-      geocaches.forEach(data => {
-        const marker = L.marker([data.lat, data.lng]).addTo(map);
-        marker.on("click", () => showGeocacheDetails(marker, data));
-      });
-    }
-
-    function showGeocacheDetails(marker, data) {
-      document.getElementById("photos").innerHTML = data.photos.map(photo => `<img src="${photo}" style="width:100px;" />`).join("");
-      document.getElementById("description").textContent = data.description;
-      document.getElementById("details-page").style.display = "block";
-    }
-
-    function closeDetails() {
-      document.getElementById("details-page").style.display = "none";
-    }
-
-    function toggleCamera() {
-      cameraFacing = cameraFacing === "environment" ? "user" : "environment";
-    }
-
-    async function capturePhoto() {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
-
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: cameraFacing } });
-        const track = stream.getVideoTracks()[0];
-        const imageCapture = new ImageCapture(track);
-
-        const photo = await imageCapture.takePhoto();
-        track.stop(); 
-
-        const photoURL = URL.createObjectURL(photo);
-        return [photoURL];
-      } catch (error) {
-        console.error("Error capturing photo:", error);
-        return [];
-      }
-    }
-  </script>
-</body>
+    <script src="./js/script.js" type="module"></script>
+  </body>
 </html>
