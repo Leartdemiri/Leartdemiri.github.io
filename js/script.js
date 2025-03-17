@@ -137,7 +137,7 @@ function trackUserMovement() {
                 }
             );
         }
-    }, 3000); // Update position every 3 seconds
+    }, 1000); // Update position every 3 seconds
 }
 
 // Helper function to calculate distance between two coordinates in meters
