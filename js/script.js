@@ -2,6 +2,8 @@
 let mapVisible = false;
 let mapInstance = null;
 const DRAGON_BALL_COUNT = 7;
+let userMarker = null;
+let userCircle = null;
 
 // Declare buttons
 const mapButton = document.getElementById("ShowMapButton");
@@ -57,22 +59,21 @@ function setupMap() {
                 mapInstance.setView([latitude, longitude], 18);
 
                 // Add marker at user's location
-                L.marker([latitude, longitude]).addTo(mapInstance)
+                userMarker = L.marker([latitude, longitude])
+                    .addTo(mapInstance)
                     .bindPopup("You are here!")
                     .openPopup();
 
                 // Add a 50m radius circle
-                const userCircle = L.circle([latitude, longitude], {
+                userCircle = L.circle([latitude, longitude], {
                     radius: 50, // 50 meters
                     color: 'yellow',
                     fillColor: 'yellow',
                     fillOpacity: 0.3
                 }).addTo(mapInstance);
 
-                // Restrict the view to the circle bounds
-                const bounds = userCircle.getBounds();
-                mapInstance.setMaxBounds(bounds);
-                mapInstance.fitBounds(bounds);
+                // Set up movement tracking
+                trackUserMovement();
 
                 // Generate Dragon Balls inside the circle
                 generateDragonBalls(latitude, longitude);
@@ -111,4 +112,44 @@ function getRandomPointInCircle(centerLat, centerLng, radius) {
 
 function scanForDragonBalls() {
     alert('Scanning for Dragon Balls...');
+}
+
+// Track user movement inside the yellow circle
+function trackUserMovement() {
+    setInterval(() => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const { latitude, longitude } = position.coords;
+
+                    // Calculate distance from original center
+                    const center = userCircle.getLatLng();
+                    const distance = getDistance(center.lat, center.lng, latitude, longitude);
+
+                    // Allow movement inside the circle only
+                    if (distance <= 50) {
+                        userMarker.setLatLng([latitude, longitude]);
+                        mapInstance.setView([latitude, longitude]);
+                    }
+                },
+                () => {
+                    console.warn("Failed to get updated location.");
+                }
+            );
+        }
+    }, 3000); // Update position every 3 seconds
+}
+
+// Helper function to calculate distance between two coordinates in meters
+function getDistance(lat1, lng1, lat2, lng2) {
+    const R = 6371000; // Earth's radius in meters
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLng = (lng2 - lng1) * (Math.PI / 180);
+
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+              Math.sin(dLng / 2) * Math.sin(dLng / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // Distance in meters
 }
