@@ -1,9 +1,13 @@
 // Variables
+const DRAGON_BALL_COUNT = 7;
 let mapVisible = false;
 let mapInstance = null;
-const DRAGON_BALL_COUNT = 7;
 let userMarker = null;
 let userCircle = null;
+let dragonBallMarkers = [];
+let partyStarted = false;
+
+
 
 // Declare buttons
 const mapButton = document.getElementById("ShowMapButton");
@@ -12,6 +16,33 @@ const searchButton = document.getElementById("SearchBallButton");
 // Assign button functions
 mapButton.addEventListener("click", toggleMap);
 searchButton.addEventListener("click", scanForDragonBalls);
+
+document.addEventListener("DOMContentLoaded", () => {
+    checkIfGameStarted();
+});
+
+function checkIfGameStarted() {
+    let gameInfo = localStorage.getItem("GameInformation");
+
+    if (gameInfo) {
+        gameInfo = JSON.parse(gameInfo);
+        console.log("Game Information Loaded:", gameInfo);
+
+        if (gameInfo.started) {
+            searchButton.disabled = true; // Disable scanning
+            alert("Game has already started. Using saved Dragon Ball locations.");
+
+            // Ensure the map is initialized before loading markers 
+            toggleMap(); // Show the map first
+            setTimeout(() => {
+                loadStoredDragonBalls(gameInfo.dragonBalls);
+            }, 1000); // Small delay to ensure the map is ready
+        } else {
+            searchButton.disabled = false;
+        }
+    }
+}
+
 
 function toggleMap() {
     const mapElement = document.getElementById("map");
@@ -74,9 +105,6 @@ function setupMap() {
 
                 // Set up movement tracking
                 trackUserMovement();
-
-                // Generate Dragon Balls inside the circle
-                generateDragonBalls(latitude, longitude);
             },
             () => {
                 console.warn("Location access denied. Using default coordinates.");
@@ -85,14 +113,35 @@ function setupMap() {
     }
 }
 
-function generateDragonBalls(centerLat, centerLng) {
-    for (let i = 0; i < DRAGON_BALL_COUNT; i++) {
-        const { lat, lng } = getRandomPointInCircle(centerLat, centerLng, 50);
+function scanForDragonBalls() {
+    alert('Scanning for Dragon Balls...');
 
-        L.marker([lat, lng])
+    if (!userMarker) {
+        alert("Location not available yet. Please wait.");
+        return;
+    }
+
+    // Clear existing markers
+    dragonBallMarkers.forEach(marker => mapInstance.removeLayer(marker));
+    dragonBallMarkers = [];
+
+    const { lat, lng } = userMarker.getLatLng();
+    let dragonBalls = [];
+
+    for (let i = 0; i < DRAGON_BALL_COUNT; i++) {
+        const { lat: ballLat, lng: ballLng } = getRandomPointInCircle(lat, lng, 50);
+        
+        const marker = L.marker([ballLat, ballLng])
             .addTo(mapInstance)
             .bindPopup("🟠 A Dragon Ball is here!");
+        
+        dragonBallMarkers.push(marker);
+        dragonBalls.push({ lat: ballLat, lng: ballLng }); // Store coordinates
     }
+
+    // Save new locations in localStorage
+    localStorage.setItem("GameInformation", JSON.stringify({ started: true, dragonBalls }));
+    searchButton.disabled = true; // Disable further scanning
 }
 
 // Generates a random point within a given radius (meters)
@@ -108,10 +157,6 @@ function getRandomPointInCircle(centerLat, centerLng, radius) {
         lat: centerLat + deltaLat,
         lng: centerLng + deltaLng
     };
-}
-
-function scanForDragonBalls() {
-    alert('Scanning for Dragon Balls...');
 }
 
 // Track user movement inside the yellow circle
@@ -137,7 +182,7 @@ function trackUserMovement() {
                 }
             );
         }
-    }, 1000); // Update position every 3 seconds
+    }, 1000); // Update position every second
 }
 
 // Helper function to calculate distance between two coordinates in meters
@@ -152,4 +197,14 @@ function getDistance(lat1, lng1, lat2, lng2) {
 
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c; // Distance in meters
+}
+
+function loadStoredDragonBalls(dragonBalls) {
+    dragonBalls.forEach(({ lat, lng }) => {
+        const marker = L.marker([lat, lng])
+            .addTo(mapInstance)
+            .bindPopup("🟠 A Dragon Ball is here!");
+
+        dragonBallMarkers.push(marker);
+    });
 }
