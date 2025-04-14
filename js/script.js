@@ -36,6 +36,7 @@ function checkIfGameStarted() {
             toggleMap(); // Show the map first
             setTimeout(() => {
                 loadStoredDragonBalls(gameInfo.dragonBalls);
+                
             }, 1000); // Small delay to ensure the map is ready
         } else {
             searchButton.disabled = false;
@@ -76,8 +77,8 @@ function setupMap() {
     if (mapInstance) return; // Prevent multiple map instances
 
     mapInstance = L.map('map', { zoomControl: false }).setView([0, 0], 16);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
-        attribution: '© OpenStreetMap contributors'
+    L.tileLayer('http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
+        className: 'green-map'
     }).addTo(mapInstance);
 
     // Get user's location
@@ -98,8 +99,8 @@ function setupMap() {
                 // Add a 50m radius circle
                 userCircle = L.circle([latitude, longitude], {
                     radius: 50, // 50 meters
-                    color: 'yellow',
-                    fillColor: 'yellow',
+                    color: 'green', 
+                    fillColor: 'green',
                     fillOpacity: 0.3
                 }).addTo(mapInstance);
 
@@ -121,7 +122,6 @@ function scanForDragonBalls() {
         return;
     }
 
-    // Clear existing markers
     dragonBallMarkers.forEach(marker => mapInstance.removeLayer(marker));
     dragonBallMarkers = [];
 
@@ -130,19 +130,33 @@ function scanForDragonBalls() {
 
     for (let i = 0; i < DRAGON_BALL_COUNT; i++) {
         const { lat: ballLat, lng: ballLng } = getRandomPointInCircle(lat, lng, 50);
-        
+
+        // Generate a unique question
+        const question = {
+            label: `What star is this Dragon Ball #${i + 1}?`,
+            choices: ["1-star", "4-star", "7-star"],
+            correct: ["1-star", "4-star", "7-star"][Math.floor(Math.random() * 3)]
+        };
+
+        // Store marker with click event
         const marker = L.marker([ballLat, ballLng])
             .addTo(mapInstance)
-            .bindPopup("🟠 A Dragon Ball is here!");
-        
+            .bindPopup("🟠 A Dragon Ball is here!")
+            .on("click", () => displayQuestion(question));
+
         dragonBallMarkers.push(marker);
-        dragonBalls.push({ lat: ballLat, lng: ballLng }); // Store coordinates
+        dragonBalls.push({ lat: ballLat, lng: ballLng, question });
     }
 
-    // Save new locations in localStorage
-    localStorage.setItem("GameInformation", JSON.stringify({ started: true, dragonBalls }));
-    searchButton.disabled = true; // Disable further scanning
+    // Save everything to localStorage
+    localStorage.setItem("GameInformation", JSON.stringify({
+        started: true,
+        dragonBalls
+    }));
+
+    searchButton.disabled = true;
 }
+
 
 // Generates a random point within a given radius (meters)
 function getRandomPointInCircle(centerLat, centerLng, radius) {
@@ -161,29 +175,35 @@ function getRandomPointInCircle(centerLat, centerLng, radius) {
 
 // Track user movement inside the yellow circle
 function trackUserMovement() {
-    setInterval(() => {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const { latitude, longitude } = position.coords;
+    if (navigator.geolocation) {
+        navigator.geolocation.watchPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords;
 
-                    // Calculate distance from original center
-                    const center = userCircle.getLatLng();
-                    const distance = getDistance(center.lat, center.lng, latitude, longitude);
+                // Calculate distance from original center
+                const center = userCircle.getLatLng();
+                const distance = getDistance(center.lat, center.lng, latitude, longitude);
 
-                    // Allow movement inside the circle only
-                    if (distance <= 50) {
-                        userMarker.setLatLng([latitude, longitude]);
-                        mapInstance.setView([latitude, longitude]);
-                    }
-                },
-                () => {
-                    console.warn("Failed to get updated location.");
+                // Allow movement inside the circle only
+                if (distance <= 50) {
+                    userMarker.setLatLng([latitude, longitude]);
+                    mapInstance.setView([latitude, longitude]);
                 }
-            );
-        }
-    }, 1000); // Update position every second
+            },
+            (error) => {
+                console.warn("Failed to get updated location.", error);
+            },
+            {
+                enableHighAccuracy: true,
+                maximumAge: 0,
+                timeout: 10000
+            }
+        );
+    } else {
+        console.warn("Geolocation is not supported by this browser.");
+    }
 }
+
 
 // Helper function to calculate distance between two coordinates in meters
 function getDistance(lat1, lng1, lat2, lng2) {
@@ -200,11 +220,31 @@ function getDistance(lat1, lng1, lat2, lng2) {
 }
 
 function loadStoredDragonBalls(dragonBalls) {
-    dragonBalls.forEach(({ lat, lng }) => {
+    dragonBalls.forEach(({ lat, lng, question }) => {
         const marker = L.marker([lat, lng])
             .addTo(mapInstance)
-            .bindPopup("🟠 A Dragon Ball is here!");
+            .bindPopup("🟠 A Dragon Ball is here!")
+            .on("click", () => displayQuestion(question));
 
         dragonBallMarkers.push(marker);
     });
+}
+
+function displayQuestion(question) {
+    const label = document.querySelector("label.form-label");
+    const choices = document.querySelectorAll(".form-check");
+
+    label.textContent = question.label;
+
+    choices.forEach((choiceDiv, index) => {
+        const input = choiceDiv.querySelector("input");
+        const label = choiceDiv.querySelector("label");
+
+        input.value = question.choices[index];
+        input.checked = false;
+        label.textContent = question.choices[index];
+    });
+
+    // Optional: Store the currently displayed question (for validation later)
+    localStorage.setItem("CurrentQuestion", JSON.stringify(question));
 }

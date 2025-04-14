@@ -19,13 +19,35 @@
     <div class="container text-center">
       <h1 class="my-5">Dragon Radar</h1>
   
+      <!-- Radar controls section -->
       <button class="btn btn-primary mb-3" id="SearchBallButton">Scan for Dragon Balls</button>
       <button class="btn btn-secondary mb-3" id="ShowMapButton">Afficher la carte</button>
   
-      <div class="d-flex justify-content-center">
+      <!-- Leaflet map radar -->
+      <div class="d-flex justify-content-center mb-4">
         <div id="map"></div>
       </div>
-  
+
+      <!-- Question quizz form section -->
+      <form id="dragonForm" class="text-start">
+        <div class="mb-3">
+          <label class="form-label fw-bold">QUESTION LABEL</label>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="dragonball" id="choice1" value="1-star">
+            <label class="form-check-label" for="choice1">CHOICE 1</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="dragonball" id="choice2" value="4-star">
+            <label class="form-check-label" for="choice2">CHOICE 2</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="dragonball" id="choice3" value="7-star">
+            <label class="form-check-label" for="choice3">CHOICE 3</label>
+          </div>
+
+          <button type="submit" class="btn btn-success mt-3">Submit Answer</button>
+        </div>
+      </form>
     </div>
 
     <script src="./js/script.js" type="module"></script>
