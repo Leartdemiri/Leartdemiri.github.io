@@ -7,6 +7,24 @@ let userCircle = null;
 let dragonBallMarkers = [];
 let partyStarted = false;
 
+let questions = [
+    {
+        label: `What star is this Dragon Ball?`,
+        choices: ["1-star", "4-star", "7-star"],
+        correct: ["1-star", "4-star", "7-star"][Math.floor(Math.random() * 3)]
+    },
+    {
+        label: `Who is the best CFPT teacher`,
+        choices: ["Mr. Francois", "Mr. Francois", "Mr. Francois"],
+        correct: ["Mr. Francois", "Mr. Francois", "Mr. Francois"][Math.floor(Math.random() * 3)]
+    },
+    {
+        label: `Who is the strongest?`,
+        choices: ["Luffy", "Goku", "Naruto"],
+        correct: ["Luffy", "Goku", "Naruto"][Math.floor(Math.random() * 3)]
+    }
+]
+
 
 
 // Declare buttons
@@ -132,11 +150,7 @@ function scanForDragonBalls() {
         const { lat: ballLat, lng: ballLng } = getRandomPointInCircle(lat, lng, 50);
 
         // Generate a unique question
-        const question = {
-            label: `What star is this Dragon Ball #${i + 1}?`,
-            choices: ["1-star", "4-star", "7-star"],
-            correct: ["1-star", "4-star", "7-star"][Math.floor(Math.random() * 3)]
-        };
+        const question = questions[Math.floor(Math.random() * questions.length)];
 
         // Store marker with click event
         const marker = L.marker([ballLat, ballLng])
