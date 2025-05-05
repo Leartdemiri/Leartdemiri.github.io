@@ -9,9 +9,9 @@ let partyStarted = false;
 
 let questions = [
     {
-        label: `What star is this Dragon Ball?`,
-        choices: ["1-star", "4-star", "7-star"],
-        correct: ["1-star", "4-star", "7-star"][Math.floor(Math.random() * 3)]
+        label: `How many hours in a day??`,
+        choices: ["48/2", "12^2", "4*5"],
+        correct: "48/2"
     },
     {
         label: `Who is the best CFPT teacher`,
@@ -266,7 +266,7 @@ function loadStoredDragonBalls(dragonBalls) {
 }
 
 
-function displayQuestion(question) {
+function displayQuestion(question, marker) {
     const label = document.querySelector("label.form-label");
     const choices = document.querySelectorAll(".form-check");
     const form = document.getElementById("dragonForm");
@@ -288,7 +288,6 @@ function displayQuestion(question) {
 
     form.style.display = "block";
 
-    // Gestionnaire de soumission
     form.onsubmit = (e) => {
         e.preventDefault();
         const selected = document.querySelector('input[name="dragonball"]:checked');
@@ -305,31 +304,26 @@ function displayQuestion(question) {
         if (isCorrect) {
             alert("✅ Correct! You got the Dragon Ball!");
 
-            // Supprimer le marqueur de cette question
-            const markerToRemove = dragonBallMarkers.find(m => m.getLatLng().lat === question.lat && m.getLatLng().lng === question.lng);
-            if (markerToRemove) {
-                mapInstance.removeLayer(markerToRemove);
-                dragonBallMarkers = dragonBallMarkers.filter(m => m !== markerToRemove);
-            }
+            // Remove the marker directly
+            mapInstance.removeLayer(marker);
+            dragonBallMarkers = dragonBallMarkers.filter(m => m !== marker);
 
-            // Retirer aussi la Dragon Ball du localStorage
+            // Remove from localStorage
             let gameInfo = JSON.parse(localStorage.getItem("GameInformation"));
-            gameInfo.dragonBalls = gameInfo.dragonBalls.filter(db => db.lat !== question.lat || db.lng !== question.lng);
+            gameInfo.dragonBalls = gameInfo.dragonBalls.filter(db => 
+                db.lat !== marker.getLatLng().lat || db.lng !== marker.getLatLng().lng
+            );
             localStorage.setItem("GameInformation", JSON.stringify(gameInfo));
 
         } else {
             alert(`❌ Incorrect! The correct answer was: ${question.correct}\nAll Dragon Balls have vanished and scattered again!`);
 
-            // Supprimer tous les anciens marqueurs
             dragonBallMarkers.forEach(marker => mapInstance.removeLayer(marker));
             dragonBallMarkers = [];
-
-            // Supprimer l'ancien stockage
             localStorage.removeItem("GameInformation");
-
-            // Redistribuer
             scanForDragonBalls();
         }
     };
 }
+
 
