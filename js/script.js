@@ -15,15 +15,16 @@ let questions = [
     },
     {
         label: `Who is the best CFPT teacher`,
-        choices: ["Mr. Francois", "Mr. Francois", "Mr. Francois"],
-        correct: ["Mr. Francois", "Mr. Francois", "Mr. Francois"][Math.floor(Math.random() * 3)]
+        choices: ["Mr. Francois", "Mr. Wanner", "Mr. Burry"],
+        correct: "Mr. Francois"
     },
     {
         label: `Who is the strongest?`,
         choices: ["Luffy", "Goku", "Naruto"],
-        correct: ["Luffy", "Goku", "Naruto"][Math.floor(Math.random() * 3)]
+        correct: "Goku"
     }
-]
+];
+
 
 
 
@@ -149,20 +150,29 @@ function scanForDragonBalls() {
     for (let i = 0; i < DRAGON_BALL_COUNT; i++) {
         const { lat: ballLat, lng: ballLng } = getRandomPointInCircle(lat, lng, 50);
 
-        // Generate a unique question
         const question = questions[Math.floor(Math.random() * questions.length)];
 
-        // Store marker with click event
-        const marker = L.marker([ballLat, ballLng])
+        // Define the icon
+        const icon = L.icon({
+            iconUrl: `assets/imgs/${i + 1}.png`,  // Adjust path if necessary
+            iconSize: [32, 32],              // Adjust size as needed
+            iconAnchor: [16, 32],            // Center bottom of icon
+            popupAnchor: [0, -32]            // Popup above the icon
+        });
+
+        // Create marker with custom icon
+        const marker = L.marker([ballLat, ballLng], { icon })
             .addTo(mapInstance)
-            .bindPopup("🟠 A Dragon Ball is here!")
-            .on("click", () => displayQuestion(question));
+            .bindPopup(`The dragon ball with ${i+1} star(s)!!`)
+            .on("click", () => {
+                marker._question = question;
+                displayQuestion(question, marker);
+            });
 
         dragonBallMarkers.push(marker);
         dragonBalls.push({ lat: ballLat, lng: ballLng, question });
     }
 
-    // Save everything to localStorage
     localStorage.setItem("GameInformation", JSON.stringify({
         started: true,
         dragonBalls
@@ -170,6 +180,7 @@ function scanForDragonBalls() {
 
     searchButton.disabled = true;
 }
+
 
 
 // Generates a random point within a given radius (meters)
@@ -234,31 +245,91 @@ function getDistance(lat1, lng1, lat2, lng2) {
 }
 
 function loadStoredDragonBalls(dragonBalls) {
-    dragonBalls.forEach(({ lat, lng, question }) => {
-        const marker = L.marker([lat, lng])
+    dragonBalls.forEach(({ lat, lng, question }, i) => {
+        const icon = L.icon({
+            iconUrl: `assets/imgs/${i + 1}.png`,
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+            popupAnchor: [0, -32]
+        });
+
+        const marker = L.marker([lat, lng], { icon })
             .addTo(mapInstance)
-            .bindPopup("🟠 A Dragon Ball is here!")
-            .on("click", () => displayQuestion(question));
+            .bindPopup(`The dragon ball with ${i + 1} star(s)!!`)
+            .on("click", () => {
+                marker._question = question;
+                displayQuestion(question, marker);
+            });
 
         dragonBallMarkers.push(marker);
     });
 }
 
+
 function displayQuestion(question) {
     const label = document.querySelector("label.form-label");
     const choices = document.querySelectorAll(".form-check");
+    const form = document.getElementById("dragonForm");
 
     label.textContent = question.label;
 
-    choices.forEach((choiceDiv, index) => {
-        const input = choiceDiv.querySelector("input");
-        const label = choiceDiv.querySelector("label");
+    choices.forEach((choiceElem, index) => {
+        const input = choiceElem.querySelector("input");
+        const label = choiceElem.querySelector("label");
 
-        input.value = question.choices[index];
-        input.checked = false;
-        label.textContent = question.choices[index];
+        if (question.choices[index]) {
+            input.value = question.choices[index];
+            label.textContent = question.choices[index];
+            choiceElem.style.display = "block";
+        } else {
+            choiceElem.style.display = "none";
+        }
     });
 
-    // Optional: Store the currently displayed question (for validation later)
-    localStorage.setItem("CurrentQuestion", JSON.stringify(question));
+    form.style.display = "block";
+
+    // Gestionnaire de soumission
+    form.onsubmit = (e) => {
+        e.preventDefault();
+        const selected = document.querySelector('input[name="dragonball"]:checked');
+
+        if (!selected) {
+            alert("Please select an answer.");
+            return;
+        }
+
+        const isCorrect = selected.value === question.correct;
+        form.reset();
+        form.style.display = "none";
+
+        if (isCorrect) {
+            alert("✅ Correct! You got the Dragon Ball!");
+
+            // Supprimer le marqueur de cette question
+            const markerToRemove = dragonBallMarkers.find(m => m.getLatLng().lat === question.lat && m.getLatLng().lng === question.lng);
+            if (markerToRemove) {
+                mapInstance.removeLayer(markerToRemove);
+                dragonBallMarkers = dragonBallMarkers.filter(m => m !== markerToRemove);
+            }
+
+            // Retirer aussi la Dragon Ball du localStorage
+            let gameInfo = JSON.parse(localStorage.getItem("GameInformation"));
+            gameInfo.dragonBalls = gameInfo.dragonBalls.filter(db => db.lat !== question.lat || db.lng !== question.lng);
+            localStorage.setItem("GameInformation", JSON.stringify(gameInfo));
+
+        } else {
+            alert(`❌ Incorrect! The correct answer was: ${question.correct}\nAll Dragon Balls have vanished and scattered again!`);
+
+            // Supprimer tous les anciens marqueurs
+            dragonBallMarkers.forEach(marker => mapInstance.removeLayer(marker));
+            dragonBallMarkers = [];
+
+            // Supprimer l'ancien stockage
+            localStorage.removeItem("GameInformation");
+
+            // Redistribuer
+            scanForDragonBalls();
+        }
+    };
 }
+
