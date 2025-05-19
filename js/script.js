@@ -6,7 +6,7 @@ let userMarker = null;
 let userCircle = null;
 let dragonBallMarkers = [];
 let partyStarted = false;
-
+let circleInfo = null
 let questions = [
     {
         label: `How many hours in a day??`,
@@ -55,7 +55,7 @@ function checkIfGameStarted() {
             toggleMap(); // Show the map first
             setTimeout(() => {
                 loadStoredDragonBalls(gameInfo.dragonBalls);
-                
+
             }, 1000); // Small delay to ensure the map is ready
         } else {
             searchButton.disabled = false;
@@ -94,7 +94,7 @@ function initializeMap() {
 
 function setupMap() {
     if (mapInstance) return; // Prevent multiple map instances
-
+    let gameInfo = localStorage.getItem("GameInformation");
     mapInstance = L.map('map', { zoomControl: false }).setView([0, 0], 16);
     L.tileLayer('http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
         className: 'green-map'
@@ -115,13 +115,23 @@ function setupMap() {
                     .bindPopup("You are here!")
                     .openPopup();
 
-                // Add a 50m radius circle
-                userCircle = L.circle([latitude, longitude], {
-                    radius: 50, // 50 meters
-                    color: 'green', 
-                    fillColor: 'green',
-                    fillOpacity: 0.3
-                }).addTo(mapInstance);
+                    if (!circleInfo) {
+                        if (gameInfo && gameInfo.started && gameInfo.circleInfo) {
+                            circleInfo = gameInfo.circleInfo;
+                        } else {
+                            circleInfo = { latitude, longitude };
+                        }
+                    }
+                    
+                    userCircle = L.circle([circleInfo.latitude, circleInfo.longitude], {
+                        radius: 50,
+                        color: 'green',
+                        fillColor: 'green',
+                        fillOpacity: 0.3
+                    }).addTo(mapInstance);
+                    
+
+
 
                 // Set up movement tracking
                 trackUserMovement();
@@ -147,6 +157,7 @@ function scanForDragonBalls() {
     const { lat, lng } = userMarker.getLatLng();
     let dragonBalls = [];
 
+
     for (let i = 0; i < DRAGON_BALL_COUNT; i++) {
         const { lat: ballLat, lng: ballLng } = getRandomPointInCircle(lat, lng, 50);
 
@@ -163,7 +174,7 @@ function scanForDragonBalls() {
         // Create marker with custom icon
         const marker = L.marker([ballLat, ballLng], { icon })
             .addTo(mapInstance)
-            .bindPopup(`The dragon ball with ${i+1} star(s)!!`)
+            .bindPopup(`The dragon ball with ${i + 1} star(s)!!`)
             .on("click", () => {
                 marker._question = question;
                 displayQuestion(question, marker);
@@ -175,7 +186,8 @@ function scanForDragonBalls() {
 
     localStorage.setItem("GameInformation", JSON.stringify({
         started: true,
-        dragonBalls
+        dragonBalls,
+        circleInfo
     }));
 
     searchButton.disabled = true;
@@ -198,18 +210,17 @@ function getRandomPointInCircle(centerLat, centerLng, radius) {
     };
 }
 
-// Track user movement inside the yellow circle
 function trackUserMovement() {
     if (navigator.geolocation) {
         navigator.geolocation.watchPosition(
             (position) => {
                 const { latitude, longitude } = position.coords;
 
-                // Calculate distance from original center
-                const center = userCircle.getLatLng();
-                const distance = getDistance(center.lat, center.lng, latitude, longitude);
+                // ✅ Use the original fixed circle center
+                const center = circleInfo; // Stored when the circle was first created
+                const distance = getDistance(center.latitude, center.longitude, latitude, longitude);
 
-                // Allow movement inside the circle only
+                // Only move the player marker if inside the original circle
                 if (distance <= 50) {
                     userMarker.setLatLng([latitude, longitude]);
                     mapInstance.setView([latitude, longitude]);
@@ -230,6 +241,7 @@ function trackUserMovement() {
 }
 
 
+
 // Helper function to calculate distance between two coordinates in meters
 function getDistance(lat1, lng1, lat2, lng2) {
     const R = 6371000; // Earth's radius in meters
@@ -237,8 +249,8 @@ function getDistance(lat1, lng1, lat2, lng2) {
     const dLng = (lng2 - lng1) * (Math.PI / 180);
 
     const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-              Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
-              Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+        Math.sin(dLng / 2) * Math.sin(dLng / 2);
 
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c; // Distance in meters
@@ -310,7 +322,7 @@ function displayQuestion(question, marker) {
 
             // Remove from localStorage
             let gameInfo = JSON.parse(localStorage.getItem("GameInformation"));
-            gameInfo.dragonBalls = gameInfo.dragonBalls.filter(db => 
+            gameInfo.dragonBalls = gameInfo.dragonBalls.filter(db =>
                 db.lat !== marker.getLatLng().lat || db.lng !== marker.getLatLng().lng
             );
             localStorage.setItem("GameInformation", JSON.stringify(gameInfo));
@@ -325,5 +337,4 @@ function displayQuestion(question, marker) {
         }
     };
 }
-
 
