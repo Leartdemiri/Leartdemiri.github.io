@@ -3,10 +3,10 @@ const DRAGON_BALL_COUNT = 7;
 let mapVisible = false;
 let mapInstance = null;
 let userMarker = null;
-let userCircle = null;
+
 let dragonBallMarkers = [];
 let partyStarted = false;
-let circleInfo = null
+
 let questions = [
     {
         label: `How many hours in a day??`,
@@ -114,25 +114,6 @@ function setupMap() {
                     .addTo(mapInstance)
                     .bindPopup("You are here!")
                     .openPopup();
-
-                    if (!circleInfo) {
-                        if (gameInfo && gameInfo.started && gameInfo.circleInfo) {
-                            circleInfo = gameInfo.circleInfo;
-                        } else {
-                            circleInfo = { latitude, longitude };
-                        }
-                    }
-                    
-                    userCircle = L.circle([circleInfo.latitude, circleInfo.longitude], {
-                        radius: 50,
-                        color: 'green',
-                        fillColor: 'green',
-                        fillOpacity: 0.3
-                    }).addTo(mapInstance);
-                    
-
-
-
                 // Set up movement tracking
                 trackUserMovement();
             },
@@ -187,7 +168,6 @@ function scanForDragonBalls() {
     localStorage.setItem("GameInformation", JSON.stringify({
         started: true,
         dragonBalls,
-        circleInfo
     }));
 
     searchButton.disabled = true;
@@ -217,8 +197,7 @@ function trackUserMovement() {
                 const { latitude, longitude } = position.coords;
 
                 // ✅ Use the original fixed circle center
-                const center = circleInfo; // Stored when the circle was first created
-                const distance = getDistance(center.latitude, center.longitude, latitude, longitude);
+                const distance = getDistance(position.latitude, position.longitude, latitude, longitude);
 
                 // Only move the player marker if inside the original circle
                 if (distance <= 50) {
@@ -269,9 +248,22 @@ function loadStoredDragonBalls(dragonBalls) {
             .addTo(mapInstance)
             .bindPopup(`The dragon ball with ${i + 1} star(s)!!`)
             .on("click", () => {
-                marker._question = question;
-                displayQuestion(question, marker);
+                const userLatLng = userMarker.getLatLng();
+                const markerLatLng = marker.getLatLng();
+            
+                const distance = getDistance(
+                    userLatLng.lat, userLatLng.lng,
+                    markerLatLng.lat, markerLatLng.lng
+                );
+            
+                if (distance <= 20) {
+                    marker._question = question;
+                    displayQuestion(question, marker);
+                } else {
+                    alert(`❌ You are too far away! Get closer to the Dragon Ball (within 20 meters).`);
+                }
             });
+            
 
         dragonBallMarkers.push(marker);
     });
