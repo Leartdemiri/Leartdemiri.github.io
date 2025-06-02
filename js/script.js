@@ -7,7 +7,7 @@ let userMarker = null;
 let dragonBallMarkers = [];
 let partyStarted = false;
 let collectedBalls;
-
+let initialPlayerPosition = null;
 let questions = [
     {
         label: `How many hours in a day??`,
@@ -134,6 +134,8 @@ function setupMap() {
                     .bindPopup("You are here!")
                     .openPopup();
 
+                    initialPlayerPosition = { lat: latitude, lng: longitude };
+
                 // Set up movement tracking
                 trackUserMovement();
             },
@@ -212,15 +214,20 @@ function getRandomPointInCircle(centerLat, centerLng, radius) {
 }
 
 function trackUserMovement() {
+    if (!initialPlayerPosition) return;
+
     if (navigator.geolocation) {
         navigator.geolocation.watchPosition(
             (position) => {
                 const { latitude, longitude } = position.coords;
 
-                // ✅ Use the original fixed circle center
-                const distance = getDistance(position.latitude, position.longitude, latitude, longitude);
+                const distance = getDistance(
+                    initialPlayerPosition.lat,
+                    initialPlayerPosition.lng,
+                    latitude,
+                    longitude
+                );
 
-                // Only move the player marker if inside the original circle
                 if (distance <= 50) {
                     userMarker.setLatLng([latitude, longitude]);
                     mapInstance.setView([latitude, longitude]);
@@ -239,6 +246,7 @@ function trackUserMovement() {
         console.warn("Geolocation is not supported by this browser.");
     }
 }
+
 
 function loadStoredDragonBalls(dragonBalls) {
     dragonBalls.forEach(({ lat, lng, question }, i) => {
