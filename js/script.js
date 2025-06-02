@@ -38,6 +38,7 @@ searchButton.addEventListener("click", scanForDragonBalls);
 
 document.addEventListener("DOMContentLoaded", () => {
     checkIfGameStarted();
+    restoreCollectedDragonBalls();
 });
 
 function checkIfGameStarted() {
@@ -95,9 +96,20 @@ function initializeMap() {
 function setupMap() {
     if (mapInstance) return; // Prevent multiple map instances
     let gameInfo = localStorage.getItem("GameInformation");
-    mapInstance = L.map('map', { zoomControl: false }).setView([0, 0], 16);
-    L.tileLayer('http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
-        className: 'green-map'
+
+    // Set up map with desired zoom limits
+    mapInstance = L.map('map', {
+        zoomControl: true,
+        minZoom: 17,
+        maxZoom: 20 // Allow zooming in very close
+    }).setView([0, 0], 16);
+
+    // Add tile layer with matching maxZoom
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
+        className: 'green-map',
+        maxZoom: 22,
+        minZoom: 1,
+        attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
     }).addTo(mapInstance);
 
     // Get user's location
@@ -114,6 +126,7 @@ function setupMap() {
                     .addTo(mapInstance)
                     .bindPopup("You are here!")
                     .openPopup();
+
                 // Set up movement tracking
                 trackUserMovement();
             },
@@ -123,6 +136,7 @@ function setupMap() {
         );
     }
 }
+
 
 function scanForDragonBalls() {
     alert('Scanning for Dragon Balls...');
@@ -219,22 +233,6 @@ function trackUserMovement() {
     }
 }
 
-
-
-// Helper function to calculate distance between two coordinates in meters
-function getDistance(lat1, lng1, lat2, lng2) {
-    const R = 6371000; // Earth's radius in meters
-    const dLat = (lat2 - lat1) * (Math.PI / 180);
-    const dLng = (lng2 - lng1) * (Math.PI / 180);
-
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
-        Math.sin(dLng / 2) * Math.sin(dLng / 2);
-
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c; // Distance in meters
-}
-
 function loadStoredDragonBalls(dragonBalls) {
     dragonBalls.forEach(({ lat, lng, question }, i) => {
         const icon = L.icon({
@@ -250,12 +248,12 @@ function loadStoredDragonBalls(dragonBalls) {
             .on("click", () => {
                 const userLatLng = userMarker.getLatLng();
                 const markerLatLng = marker.getLatLng();
-            
+
                 const distance = getDistance(
                     userLatLng.lat, userLatLng.lng,
                     markerLatLng.lat, markerLatLng.lng
                 );
-            
+
                 if (distance <= 20) {
                     marker._question = question;
                     displayQuestion(question, marker);
@@ -263,11 +261,27 @@ function loadStoredDragonBalls(dragonBalls) {
                     alert(`❌ You are too far away! Get closer to the Dragon Ball (within 20 meters).`);
                 }
             });
-            
+
 
         dragonBallMarkers.push(marker);
     });
 }
+
+// Helper function to calculate distance between two coordinates in meters
+function getDistance(lat1, lng1, lat2, lng2) {
+    const R = 6371000; // Earth's radius in meters
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLng = (lng2 - lng1) * (Math.PI / 180);
+
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+        Math.sin(dLng / 2) * Math.sin(dLng / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // Distance in meters
+}
+
+
 
 
 function displayQuestion(question, marker) {
@@ -319,6 +333,30 @@ function displayQuestion(question, marker) {
             );
             localStorage.setItem("GameInformation", JSON.stringify(gameInfo));
 
+            // Add collected Dragon Ball to UI
+            const list = document.getElementById("dragonBallList");
+            const img = document.createElement("img");
+            img.src = img.src = marker.options.icon.options.iconUrl;
+            img.style.width = "40px";
+            img.style.height = "40px";
+            img.title = `Collected Dragon Ball ${img.alt}`;
+            list.appendChild(img);
+
+            // Extract Dragon Ball number from image URL (e.g., "1.png")
+            const match = img.src.match(/(\d+)\.png/);
+            const dbNumber = match ? parseInt(match[1]) : null;
+
+            if (dbNumber) {
+                // Save collected DBs
+                let collected = JSON.parse(localStorage.getItem("CollectedBalls")) || [];
+                if (!collected.includes(dbNumber)) {
+                    collected.push(dbNumber);
+                    localStorage.setItem("CollectedBalls", JSON.stringify(collected));
+                }
+            }
+
+
+
         } else {
             alert(`❌ Incorrect! The correct answer was: ${question.correct}\nAll Dragon Balls have vanished and scattered again!`);
 
@@ -330,3 +368,17 @@ function displayQuestion(question, marker) {
     };
 }
 
+function restoreCollectedDragonBalls() {
+    const list = document.getElementById("dragonBallList");
+    const collected = JSON.parse(localStorage.getItem("CollectedBalls")) || [];
+
+    collected.forEach(num => {
+        const img = document.createElement("img");
+        img.src = `assets/imgs/${num}.png`;
+        img.alt = `Dragon Ball ${num}`;
+        img.style.width = "40px";
+        img.style.height = "40px";
+        img.title = `Collected Dragon Ball ${num}`;
+        list.appendChild(img);
+    });
+}
