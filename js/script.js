@@ -6,6 +6,7 @@ let userMarker = null;
 
 let dragonBallMarkers = [];
 let partyStarted = false;
+let collectedBalls;
 
 let questions = [
     {
@@ -62,6 +63,12 @@ function checkIfGameStarted() {
             searchButton.disabled = false;
         }
     }
+
+    const collected = localStorage.getItem("CollectedBalls");
+    if (collected) {
+        collectedBalls = new Set(JSON.parse(collected));
+    }
+
 }
 
 
@@ -360,13 +367,28 @@ function displayQuestion(question, marker) {
         } else {
             alert(`❌ Incorrect! The correct answer was: ${question.correct}\nAll Dragon Balls have vanished and scattered again!`);
 
+            // Remove all markers
             dragonBallMarkers.forEach(marker => mapInstance.removeLayer(marker));
             dragonBallMarkers = [];
+
+            // Clear local storage
             localStorage.removeItem("GameInformation");
+            localStorage.removeItem("CollectedBalls");
+
+            // Clear in-memory Set
+            if (collectedBalls) collectedBalls.clear();
+
+            // Clear UI collected ball images
+            const list = document.getElementById("dragonBallList");
+            list.innerHTML = "";
+
+            // Restart scanning
             scanForDragonBalls();
+
         }
     };
 }
+
 
 function restoreCollectedDragonBalls() {
     const list = document.getElementById("dragonBallList");
